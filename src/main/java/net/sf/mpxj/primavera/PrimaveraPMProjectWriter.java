@@ -1100,6 +1100,7 @@ final class PrimaveraPMProjectWriter
    {
       List<ResourceAssignment> assignments = new ArrayList<>();
       m_projectFile.getTasks().forEach(t -> assignments.addAll(t.getResourceAssignments()));
+      assignments.sort(Comparator.comparing(ResourceAssignment::getUniqueID));
 
       for (ResourceAssignment assignment : assignments)
       {
@@ -1194,21 +1195,27 @@ final class PrimaveraPMProjectWriter
     */
    private void writePredecessors(Task task)
    {
-      List<Relation> relations = task.getPredecessors();
-      for (Relation mpxj : relations)
-      {
-         RelationshipType xml = m_factory.createRelationshipType();
-         m_relationships.add(xml);
+      task.getPredecessors().stream().sorted(Comparator.comparing(Relation::getUniqueID)).forEach(this::writePredecessor);
+   }
 
-         xml.setLag(getDurationInHours(mpxj.getLag()));
-         xml.setObjectId(mpxj.getUniqueID());
-         xml.setPredecessorActivityObjectId(mpxj.getTargetTask().getUniqueID());
-         xml.setSuccessorActivityObjectId(mpxj.getSourceTask().getUniqueID());
-         xml.setPredecessorProjectObjectId(m_projectObjectID);
-         xml.setSuccessorProjectObjectId(m_projectObjectID);
-         xml.setType(RelationTypeHelper.getXmlFromInstance(mpxj.getType()));
-         xml.setComments(mpxj.getNotes());
-      }
+   /**
+    * Write an individual predecessor.
+    *
+    * @param mpxj Relation instance
+    */
+   private void writePredecessor(Relation mpxj)
+   {
+      RelationshipType xml = m_factory.createRelationshipType();
+      m_relationships.add(xml);
+
+      xml.setLag(getDurationInHours(mpxj.getLag()));
+      xml.setObjectId(mpxj.getUniqueID());
+      xml.setPredecessorActivityObjectId(mpxj.getTargetTask().getUniqueID());
+      xml.setSuccessorActivityObjectId(mpxj.getSourceTask().getUniqueID());
+      xml.setPredecessorProjectObjectId(m_projectObjectID);
+      xml.setSuccessorProjectObjectId(m_projectObjectID);
+      xml.setType(RelationTypeHelper.getXmlFromInstance(mpxj.getType()));
+      xml.setComments(mpxj.getNotes());
    }
 
    /**
